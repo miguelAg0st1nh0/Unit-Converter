@@ -15,6 +15,9 @@ struct ContentView: View {
     var body: some View {
         
         HStack{
+            
+            Color.white
+            
             TextField("Units", text: .constant(""))
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .keyboardType(.decimalPad)
