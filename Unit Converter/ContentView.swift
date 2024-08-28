@@ -9,55 +9,46 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var unityType = 1
-    @State private var userInput: String = ""
-    @State private var lenghtUnits = 1
-    var body: some View {
+    @State private var exchangeRate: Double?
+    @State private var errorMessage: String?
         
-        HStack{
-            
-            Color.white
-            
-            TextField("Units", text: .constant(""))
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .keyboardType(.decimalPad)
-            Picker(selection: $lenghtUnits, label: /*@START_MENU_TOKEN@*/Text("Picker")/*@END_MENU_TOKEN@*/) {
-                Text("Meters").tag(1)
-                Text("Kilometer").tag(2)
+        var body: some View {
+            VStack {
+                if let rate = exchangeRate{
+                    Text("1 $ = £\(rate) GBP")
+                } else if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                } else {
+                    Text("Loading...")
+                }
+            }
+            .onAppear(perform: {
+                fetchExchangeRates()
+            })
+        }
+    
+    func fetchExchangeRates() {
+        NetworkManager.shared.getExhangeData { result in
+            switch result {
+            case .success(let currencyRates):
+                if let gbpRate = currencyRates.first(where: {$0.currency == "GBP"})?.rate {
+                    DispatchQueue.main.async{
+                        self.exchangeRate = gbpRate
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.errorMessage = "Rate not found"
+                    }
+                }
+            case .failure(let error):
+                DispatchQueue.main.asyncAndWait {
+                    self.errorMessage = "Failed to fetch rate: \(error.localizedDescription)"
+                }
             }
         }
-        .frame(width: 300, height: 50)
-        
-        HStack{
-            TextField("Units", text: .constant(""))
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .keyboardType(.decimalPad)
-            
-            Picker(selection: $lenghtUnits, label: /*@START_MENU_TOKEN@*/Text("Picker")/*@END_MENU_TOKEN@*/) {
-                Text("Meters").tag(2)
-                Text("Kilometers").tag(1)
-            }
-        }
-        .frame(width: 300, height: 50)
-       
-        
-        
-        VStack {
-            Picker(selection: $unityType, label: Text("Picker")) {
-                Text("Lenght").tag(1)
-                Text("Weight").tag(2)
-                Text("Temperature").tag(3)
-                Text("Currency").tag(4)
-                
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            
-        }
-        
-        
-        
         
     }
+        
 }
 
 #Preview {
