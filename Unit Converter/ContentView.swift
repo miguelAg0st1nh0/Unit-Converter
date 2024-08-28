@@ -15,7 +15,7 @@ struct ContentView: View {
         var body: some View {
             VStack {
                 if let rate = exchangeRate{
-                    Text("1 $ = £\(rate) GBP")
+                    Text("1 $ = £\(String(format: "%.2f", rate)) GBP")
                 } else if let errorMessage = errorMessage {
                     Text(errorMessage)
                 } else {
