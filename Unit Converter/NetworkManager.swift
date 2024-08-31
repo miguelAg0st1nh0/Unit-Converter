@@ -11,11 +11,13 @@ final class NetworkManager{
     
     static let shared = NetworkManager()
     
-    private let url = "https://api.exchangerate-api.com/v4/latest/USD"
+    private let basedURL = "https://api.exchangerate-api.com/v4/latest/"
     
-    func getExhangeData(completed: @escaping (Result<[CurrencyRate], NetworkErrorHandler>) -> Void ) {
+    func getExhangeData(for baseCurrency: String, completed: @escaping (Result<[CurrencyRate], NetworkErrorHandler>) -> Void ) {
         
-        guard let url = URL(string: url) else {
+        let urlString = basedURL + baseCurrency
+        
+        guard let url = URL(string: urlString) else {
             
             completed(.failure(.invalidURL))
             return

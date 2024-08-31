@@ -9,37 +9,87 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var exchangeRate: Double?
     @State private var errorMessage: String?
-        
+    @State private var fromAmount: String = ""
+    @State private var toAmount: String = ""
+    @State private var convertedAmount = ""
+    
+    @State private var fromCurrency: Int = 1
+    @State private var toCurrency: Int = 2
+    
+    @State private var exchangeRates: [CurrencyRate] = []
+    let currencies = ["USD", "EUR", "BRL", "GBP", "CAD", "AUD", "PEN"]
+    
+    
+    private var fromSelectedCurrency: String {
+        currencies[fromCurrency]
+    }
+    
+    private var toSelectedCurrency: String {
+        currencies[toCurrency]
+    }
+    
         var body: some View {
+            
             VStack {
-                if let rate = exchangeRate{
-                    Text("1 $ = £\(String(format: "%.2f", rate)) GBP")
-                } else if let errorMessage = errorMessage {
+                
+                Text("Currency Converter")
+                    .font(.largeTitle)
+                    .frame(width: 300, height: 300)
+                
+                if let errorMessage = errorMessage{
                     Text(errorMessage)
-                } else {
-                    Text("Loading...")
+                        .foregroundStyle(.red)
+                }
+                
+                HStack {
+                    TextField("Amount: ", text: $fromAmount)
+                        .frame(width: 150, height: 50)
+                        .keyboardType(.decimalPad)
+                    
+                    Picker("From Currency:", selection: $fromCurrency){
+                        ForEach(currencies.indices, id: \.self) { index in
+                            Text(currencies[index]).tag(index)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    
+                }
+                HStack{
+                    Text("\(convertedAmount)")
+                        .frame(width: 150, height: 50)
+                        .keyboardType(.decimalPad)
+                    
+                    Picker("From Currency:", selection: $toCurrency){
+                        ForEach(currencies.indices, id: \.self) { index in
+                            Text(currencies[index]).tag(index)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+
+                }
+                
+                Button(action: convertCurrencies){
+                    Text("Convert")
                 }
             }
             .onAppear(perform: {
                 fetchExchangeRates()
+                
             })
+            
+            
         }
     
     func fetchExchangeRates() {
-        NetworkManager.shared.getExhangeData { result in
+        NetworkManager.shared.getExhangeData(for: "EUR") { result in
             switch result {
-            case .success(let currencyRates):
-                if let gbpRate = currencyRates.first(where: {$0.currency == "GBP"})?.rate {
+            case .success(let rates):
                     DispatchQueue.main.async{
-                        self.exchangeRate = gbpRate
+                        self.exchangeRates = rates
+                        
+                        
                     }
-                } else {
-                    DispatchQueue.main.async {
-                        self.errorMessage = "Rate not found"
-                    }
-                }
             case .failure(let error):
                 DispatchQueue.main.asyncAndWait {
                     self.errorMessage = "Failed to fetch rate: \(error.localizedDescription)"
@@ -48,7 +98,23 @@ struct ContentView: View {
         }
         
     }
+    
+    func convertCurrencies() {
         
+        guard let fromRate = exchangeRates.first(where: {$0.currency == fromSelectedCurrency})?.rate,
+              let toRate = exchangeRates.first(where: {$0.currency == toSelectedCurrency})?.rate,
+              let amount = Double(fromAmount) else {
+            self.errorMessage = "Conversion Error!"
+            return
+        }
+        
+        let baseAmount = amount / fromRate
+        let converted = baseAmount * toRate
+        
+        self.convertedAmount = String(format: "%.2f", converted)
+        
+    }
+
 }
 
 #Preview {
